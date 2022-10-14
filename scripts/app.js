@@ -6,6 +6,25 @@ function formatCurrency(n) {
     }).format(n)
 }
 
+function debounceTimer(fn, msec) {
+    let lastCall = 0
+    let lastCallTimer = NaN
+
+    return (...arg) => {
+        const previousCall = lastCall
+        lastCall = Date.now()
+
+        if (previousCall && ((lastCall - previousCall) <= msec)) {
+            clearTimeout(lastCallTimer)
+        }
+
+        lastCallTimer = setTimeout(() => {
+            fn(...arg)
+        }, msec)
+    }
+}
+
+// навигация
 {
     const navLinks = document.querySelectorAll('.navigation__link')
     const calcElems = document.querySelectorAll('.calc')
@@ -36,7 +55,7 @@ function formatCurrency(n) {
 
     calcLabelExpenses.style.display = 'none'
 
-    formAusn.addEventListener('input', () => {
+    formAusn.addEventListener('input', debounceTimer(() => {
         if (formAusn.type.value == 'income') {
             calcLabelExpenses.style.display = 'none'
             resTaxTotalAusn.textContent = formatCurrency(formAusn.income.value * 0.08)
@@ -45,7 +64,7 @@ function formatCurrency(n) {
             calcLabelExpenses.style.display = 'block'
             resTaxTotalAusn.textContent = formatCurrency(((formAusn.income.value - formAusn.expenses.value) * 0.2)  < 0 ? 0 : ((formAusn.income.value - formAusn.expenses.value) * 0.2))
         }
-    })
+    }, 500))
 }
 
 // Самозанятый
@@ -69,7 +88,7 @@ function formatCurrency(n) {
 
     checkCompensation()
 
-    formSelfEmloyment.addEventListener('input', () => {
+    formSelfEmloyment.addEventListener('input', debounceTimer(() => {
         const resA = formSelfEmloyment.a.value * 0.04
         const resB = formSelfEmloyment.b.value * 0.06
         checkCompensation()
@@ -83,7 +102,7 @@ function formatCurrency(n) {
         resultTaxCompensation.textContent = formatCurrency(benefit - finalBenefit)
         resultTaxRestCompensation.textContent = formatCurrency(finalBenefit)
         resultTaxResual.textContent = formatCurrency(finalTax)
-    })
+    }, 500))
 }
 
 // ОСНО
@@ -114,7 +133,7 @@ function formatCurrency(n) {
         }
     }
 
-    formOsno.addEventListener('input', () => {
+    formOsno.addEventListener('input', debounceTimer(() => {
         checkFromBuisness()
         const income = formOsno.income.value
         const expenses = formOsno.expenses.value
@@ -139,7 +158,7 @@ function formatCurrency(n) {
         if (taxProfit < 0) {
             resultTaxProfit.textContent = formatCurrency(0)
         }
-    })
+    }, 500))
 
     // const resultBlockCompensationOsno = osno.querySelectorAll('.result__block_compensation')
     // const radBtn = formOsno.querySelectorAll('.calc__radio')
@@ -223,7 +242,7 @@ function formatCurrency(n) {
         'ooo-expenses': 0.15,
     }
 
-    formUsn.addEventListener('input', () => {
+    formUsn.addEventListener('input', debounceTimer(() => {
         // checkShopProprty(formUsn.typeTax.value)
         typeTax[formUsn.typeTax.value]()
         const income = formUsn.income.value
@@ -248,7 +267,7 @@ function formatCurrency(n) {
         if (tax < 0) {
             resultTaxTotal.textContent = formatCurrency(0)
         }
-    })
+    }, 500))
 }
 
 // налоговый вычет
@@ -257,24 +276,20 @@ function formatCurrency(n) {
     const formTaxReturn = taxReturn.querySelector('.calc__form')
 
     const resultTaxNdfl = taxReturn.querySelector('.result__tax_ndfl')
-    const resultTaxProfitDesired = taxReturn.querySelector('.result__tax_profit-desired')
-    const resultTaxProfit = taxReturn.querySelector('.result__tax_profit')
+    const resultTaxProfitDesired = taxReturn.querySelector('.result__tax_profit-desired') // posible
+    const resultTaxProfit = taxReturn.querySelector('.result__tax_profit') // deduction
 
-    formTaxReturn.addEventListener('input', () => {
-        const a = formTaxReturn.a.value
-        const b = formTaxReturn.b.value
+    formTaxReturn.addEventListener('input', debounceTimer(() => {
+        const a = +formTaxReturn.a.value // expenses
+        const b = +formTaxReturn.b.value // income
+        const sumExpenses = +formTaxReturn.sumExpenses.value
 
-        let nalogRashod = a * 0.13
-        const nalogDohod = b * 0.13
+        const ndfl = b * 0.13
+        const desiredProfit = a < sumExpenses ? a * 0.13 : sumExpenses * 0.13
+        const profit = desiredProfit < ndfl ? desiredProfit : ndfl
 
-        if (b <= 0) {
-            resultTaxProfit.textContent = formatCurrency(0)
-        }
-        if ( b > 0) {
-            resultTaxProfit.textContent = formatCurrency(nalogDohod)
-        }
-        if (nalogRashod < nalogDohod) {
-            resultTaxProfit.textContent = formatCurrency(nalogRashod)
-        }
-    })
+        resultTaxNdfl.textContent = formatCurrency(ndfl)
+        resultTaxProfitDesired.textContent = formatCurrency(desiredProfit)
+        resultTaxProfit.textContent = formatCurrency(profit)
+    }, 500))
 }
